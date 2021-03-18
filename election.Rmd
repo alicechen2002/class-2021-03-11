@@ -52,10 +52,54 @@ fit_1 <- stan_glm(formula = biden_win ~ 1,
                   family = binomial,
                   refresh = 0,
                   seed = 2021)
+
+
+
 ```
 
 There are two kinds of questions we can explore. First, what are "average" or "expected" values? Implicit here is the idea that we are considering so many units that the error terms does not matter. Use `posterior_epred()` for those questions. Second, what are "predicted" values for one or a small number of units. We can't ignore that randomness of life, as represented by error terms, when dealing with these questions. Use `posterior_predict()` in this scenario.
 
+```{r}
+
+posterior_epred(fit_1, 
+                newdata = tibble(constant = 1)) %>% 
+  as_tibble() %>% 
+  ggplot(aes(x = `1`)) +
+    geom_histogram(aes(y = after_stat(count/sum(count))),
+                   bins = 50) + 
+    labs(title = "Posterior Probability Distribution of percentage of districts Biden wins",
+         subtitle = "Proportion of Biden wins is centered around 0.5",
+         x = "Proportion p of Biden wins",
+         y = "Probability") 
+
+posterior_predict(fit_1, 
+                  newdata = tibble(constant = rep(1, 10))) %>% 
+  as_tibble() %>% 
+  mutate(total = rowSums(across(`1`:`10`))) %>% 
+  select(total) %>% 
+  ggplot(aes(total)) +
+    geom_histogram(aes(y = after_stat(count/sum(count))),
+                   bins = 50) +
+    labs(title = "Posterior Probability Distribution of Biden wins in 10 Districts",
+         subtitle = "Probability of Biden Wins in 10 Districts",
+         x = "Number of Biden Wins",
+         y = "Probability") + 
+    scale_x_continuous(labels = scales::number_format(accuracy = 1)) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    theme_classic()
+
+posterior_predict(fit_1, newdata = tibble(constant = rep(1, 10))) %>%
+  as_tibble() %>%
+  mutate(total = rowSums(across('1':'10'))) %>%
+  ggplot(aes(x = total)) +
+  geom_histogram(aes(y = after_stat(count/sum(count))), bins = 10) +
+  labs(title = "Posterior Probability Distribution of the number of districts Biden wins out of 10",
+       subtitle = "Probability of Biden Wins in 10 Distructs",
+       x = "Number of Districts Biden Wins",
+       y = "Probability")
+
+
+```
 
 
 
